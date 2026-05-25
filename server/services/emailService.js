@@ -1,72 +1,110 @@
 'use strict';
 
 import nodemailer from 'nodemailer';
+import dns from 'dns';
 
-let transporter;
+// Force IPv4 DNS resolution app-wide to prevent ENETUNREACH on cloud hosts that block IPv6 outbound routes
+if (dns && typeof dns.setDefaultResultOrder === 'function') {
+  dns.setDefaultResultOrder('ipv4first');
+}
+
+let transporter = null;
+let transporterPromise = null;
 let isEthereal = false;
 
-// Initialize email transporter
+// Initialize email transporter with thread-safe caching to prevent concurrent race conditions
 async function initTransporter() {
   if (transporter) return transporter;
+  if (transporterPromise) return transporterPromise;
 
-  const user = process.env.EMAIL_USER;
-  // Gmail App Passwords are shown with spaces for readability but must be sent without spaces
-  const pass = process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s+/g, '') : undefined;
+  transporterPromise = (async () => {
+    let activeTransporter = null;
+    const user = process.env.EMAIL_USER;
+    // Gmail App Passwords are shown with spaces for readability but must be sent without spaces
+    const pass = process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s+/g, '') : undefined;
+    const host = process.env.EMAIL_HOST;
+    const port = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT) : 587;
 
-  console.log(`[EmailService] Environment Variables Status:`);
-  console.log(`  - EMAIL_USER: ${user ? 'Present (' + user + ')' : 'NOT PRESENT'}`);
-  console.log(`  - EMAIL_PASS: ${pass ? 'Present (' + pass.length + ' chars)' : 'NOT PRESENT'}`);
+    console.log(`[EmailService] Environment Variables Status:`);
+    console.log(`  - EMAIL_USER: ${user ? 'Present (' + user + ')' : 'NOT PRESENT'}`);
+    console.log(`  - EMAIL_PASS: ${pass ? 'Present (' + pass.length + ' chars)' : 'NOT PRESENT'}`);
+    console.log(`  - EMAIL_HOST: ${host || 'Not set (will use Gmail service shorthand)'}`);
+    console.log(`  - EMAIL_PORT: ${port}`);
 
-  if (user && pass) {
-    console.log('[EmailService] Gmail credentials found. Connecting via Gmail service...');
-    // Use service:'gmail' shorthand — same pattern as verified working project
-    transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user, pass },
-    });
+    if (user && pass) {
+      if (host) {
+        console.log(`[EmailService] SMTP credentials found. Connecting via custom host ${host}:${port}...`);
+        activeTransporter = nodemailer.createTransport({
+          host,
+          port,
+          secure: port === 465,       // SSL for port 465, STARTTLS for 587
+          requireTLS: port === 587,   // Enforce TLS on port 587, reject plain-text connections
+          family: 4,                  // Force IPv4 socket-level — prevents ENETUNREACH on cloud hosts
+          auth: { user, pass },
+          connectionTimeout: 10000,   // 10s to establish TCP connection
+          greetingTimeout: 10000,     // 10s waiting for initial SMTP server greeting
+          socketTimeout: 15000,       // 15s max idle time during active data transfer
+        });
+      } else {
+        console.log('[EmailService] Gmail credentials found. Connecting via Gmail service shorthand...');
+        activeTransporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: { user, pass },
+        });
+      }
 
-    try {
-      console.log('[EmailService] Verifying Gmail connection...');
-      await transporter.verify();
-      console.log('[EmailService] ✅ Gmail connection VERIFIED. Ready to send real emails!');
-    } catch (err) {
-      console.error(`[EmailService] Gmail verification FAILED: ${err.message}`);
-      console.error('[EmailService] Falling back to Ethereal test account...');
-      transporter = null;
+      try {
+        console.log('[EmailService] Verifying SMTP connection...');
+        await activeTransporter.verify();
+        console.log('[EmailService] ✅ SMTP connection VERIFIED. Ready to send real emails!');
+      } catch (err) {
+        console.error(`[EmailService] SMTP verification FAILED: ${err.message}`);
+        console.error('[EmailService] Falling back to Ethereal test account...');
+        activeTransporter = null;
+      }
     }
-  }
 
-  // Fallback if Gmail failed or credentials missing
-  if (!transporter) {
-    console.log('[EmailService] Creating Ethereal test account for preview emails...');
-    try {
-      const testAccount = await nodemailer.createTestAccount();
-      isEthereal = true;
-      transporter = nodemailer.createTransport({
-        host: 'smtp.ethereal.email',
-        port: 587,
-        secure: false,
-        auth: {
-          user: testAccount.user,
-          pass: testAccount.pass,
-        },
-      });
-      console.log(`[EmailService] Ethereal test account ready: ${testAccount.user}`);
-      console.log(`[EmailService] Preview emails at: https://ethereal.email`);
-    } catch (err) {
-      console.error('[EmailService] Ethereal failed, using mock logger:', err.message);
-      transporter = {
-        sendMail: async (options) => {
-          console.log('[EmailService MOCK] Would send email:');
-          console.log(`  To: ${options.to}`);
-          console.log(`  Subject: ${options.subject}`);
-          return { messageId: 'mock-id-12345', mock: true };
-        }
-      };
+    // Fallback if SMTP failed or credentials missing
+    if (!activeTransporter) {
+      console.log('[EmailService] Creating Ethereal test account for preview emails...');
+      try {
+        const testAccount = await nodemailer.createTestAccount();
+        isEthereal = true;
+        activeTransporter = nodemailer.createTransport({
+          host: 'smtp.ethereal.email',
+          port: 587,
+          secure: false,
+          auth: {
+            user: testAccount.user,
+            pass: testAccount.pass,
+          },
+        });
+        console.log(`[EmailService] Ethereal test account ready: ${testAccount.user}`);
+        console.log(`[EmailService] Preview emails at: https://ethereal.email`);
+      } catch (err) {
+        console.error('[EmailService] Ethereal failed, using mock logger:', err.message);
+        activeTransporter = {
+          sendMail: async (options) => {
+            console.log('[EmailService MOCK] Would send email:');
+            console.log(`  To: ${options.to}`);
+            console.log(`  Subject: ${options.subject}`);
+            return { messageId: 'mock-id-12345', mock: true };
+          }
+        };
+      }
     }
+
+    return activeTransporter;
+  })();
+
+  try {
+    transporter = await transporterPromise;
+    return transporter;
+  } finally {
+    transporterPromise = null;
   }
-  return transporter;
 }
+
 
 // Production-safe site URL — override with SITE_URL env var in deployment
 const SITE_URL = process.env.SITE_URL || 'http://localhost:5173';
