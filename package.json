@@ -1,0 +1,33 @@
+{
+  "name": "one-bite-pro",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "One-Bite Restaurant — Unified Full-Stack Platform",
+  "main": "server/server.js",
+  "scripts": {
+    "postinstall": "npm install --prefix client",
+    "build": "npm run build --prefix client",
+    "start": "node server/server.js",
+    "reset-admin": "node server/scripts/reset_admin.js",
+    "dev": "concurrently --names \"SERVER,CLIENT\" --prefix-colors \"cyan,magenta\" \"npm run dev-server\" \"npm run dev-client\"",
+    "dev-server": "nodemon server/server.js",
+    "dev-client": "npm run dev --prefix client"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.3",
+    "express-validator": "^7.0.1",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.3.4",
+    "morgan": "^1.10.0",
+    "nodemailer": "^8.0.7"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.1.14"
+  }
+}

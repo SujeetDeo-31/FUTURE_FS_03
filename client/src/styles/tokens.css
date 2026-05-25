@@ -1,0 +1,72 @@
+/* ── tokens.css — Design tokens + dark theme ────────────────── */
+:root {
+  /* Brand */
+  --primary:        #E63946;
+  --primary-dark:   #C1333F;
+  --primary-light:  #FF6B76;
+  --secondary:      #1D3557;
+  --secondary-mid:  #264473;
+  --accent:         #F4A261;
+  --accent-dark:    #E08B4A;
+
+  /* Surfaces — light */
+  --bg:        #FAFAF8;
+  --bg-alt:    #F3F1EE;
+  --surface:   #FFFFFF;
+  --surface-2: #F8F6F3;
+
+  /* Text */
+  --text:   #1C1C1E;
+  --text-2: #48484A;
+  --text-3: #8A8A8E;
+
+  /* Border */
+  --border: #E4E0DA;
+
+  /* Shadows */
+  --sh-xs: 0 1px 2px  rgb(0 0 0/.05);
+  --sh-sm: 0 2px 8px  rgb(0 0 0/.07);
+  --sh-md: 0 6px 24px rgb(0 0 0/.10);
+  --sh-lg: 0 16px 48px rgb(0 0 0/.13);
+  --sh-xl: 0 32px 72px rgb(0 0 0/.16);
+
+  /* Radius */
+  --r-xs:   6px;
+  --r-sm:  10px;
+  --r-md:  14px;
+  --r-lg:  20px;
+  --r-xl:  28px;
+  --r-pill: 9999px;
+
+  /* Typography */
+  --ff-head: 'Poppins', system-ui, sans-serif;
+  --ff-body: 'Inter', system-ui, sans-serif;
+
+  /* Layout */
+  --max-w:        1200px;
+  --container-px: clamp(16px, 5vw, 32px);
+  --section-py:   88px;
+  --nav-h:        68px;
+
+  /* Transitions */
+  --tr-fast: 150ms ease;
+  --tr-base: 250ms ease;
+  --tr-slow: 420ms cubic-bezier(.4,0,.2,1);
+}
+
+/* ── Dark theme overrides ───────────────────────────────────── */
+[data-theme="dark"] {
+  --bg:        #111118;
+  --bg-alt:    #17171F;
+  --surface:   #1E1E28;
+  --surface-2: #252532;
+  --text:      #F2F2F0;
+  --text-2:    #ADADAA;
+  --text-3:    #6E6E6C;
+  --border:    #2E2E3C;
+  --sh-xs: 0 1px 2px  rgb(0 0 0/.30);
+  --sh-sm: 0 2px 8px  rgb(0 0 0/.35);
+  --sh-md: 0 6px 24px rgb(0 0 0/.40);
+  --sh-lg: 0 16px 48px rgb(0 0 0/.50);
+  --sh-xl: 0 32px 72px rgb(0 0 0/.55);
+}

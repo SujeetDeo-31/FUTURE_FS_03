@@ -1,0 +1,57 @@
+/* ── overlays.css — Lightbox, floating CTA ───────────────────── */
+
+/* ── Lightbox ────────────────────────────────────────────────── */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0,0,0,.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.lightbox__close {
+  position: absolute; top: 20px; right: 20px;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(255,255,255,.1); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  transition: background var(--tr-base);
+}
+.lightbox__close:hover { background: rgba(255,255,255,.2); }
+.lightbox__img {
+  max-width: min(90vw, 900px); max-height: 80vh;
+  object-fit: contain; border-radius: var(--r-md); box-shadow: var(--sh-xl);
+}
+.lightbox__caption {
+  position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+  font-family: var(--ff-head); font-size: .82rem; font-weight: 600;
+  color: rgba(255,255,255,.65); white-space: nowrap;
+}
+
+/* ── Floating CTA ────────────────────────────────────────────── */
+.floating-cta {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--primary);
+  color: #fff;
+  font-family: var(--ff-head);
+  font-size: .83rem;
+  font-weight: 600;
+  padding: 12px 20px;
+  border-radius: var(--r-pill);
+  box-shadow: 0 4px 20px rgb(230 57 70/.45);
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity var(--tr-base), transform var(--tr-base), background var(--tr-base);
+}
+.floating-cta.is-visible { opacity: 1; transform: none; pointer-events: auto; }
+.floating-cta:hover { background: var(--primary-dark); }

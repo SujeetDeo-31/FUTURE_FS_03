@@ -1,0 +1,114 @@
+/* ── base.css — Reset, typography, layout utilities ─────────── */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+[hidden] { display: none !important; }
+
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: var(--ff-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  overflow-x: hidden;
+  transition: background-color var(--tr-slow), color var(--tr-slow);
+}
+
+/* Smooth global transitions for theme variables */
+body, 
+section, 
+header, 
+footer,
+.form-card, 
+.contact-card, 
+.user-panel__container,
+.admin-panel__container,
+.form-input, 
+.social-btn, 
+.about-stat-card,
+.flavor-card,
+.flavor-rec-card,
+.testimonial-card,
+.admin-stat-card,
+.admin-table,
+.admin-table th,
+.admin-table td,
+.history-card,
+.nav,
+.nav__inner,
+.nav__link,
+.cart-toggle,
+.user-toggle,
+.theme-toggle {
+  transition: 
+    background-color var(--tr-slow), 
+    color var(--tr-slow), 
+    border-color var(--tr-slow), 
+    box-shadow var(--tr-slow),
+    transform var(--tr-fast);
+}
+
+
+img, video { max-width: 100%; height: auto; display: block; }
+a { text-decoration: none; color: inherit; }
+ul, ol { list-style: none; }
+button { cursor: pointer; border: none; background: none; font-family: inherit; color: inherit; }
+input, select, textarea { font-family: inherit; }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: var(--r-xs); }
+
+/* ── Layout ─────────────────────────────────────────────────── */
+.container {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding-inline: var(--container-px);
+}
+
+.section { padding-block: var(--section-py); }
+
+/* ── Section headers ────────────────────────────────────────── */
+.section-header {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto 56px;
+}
+
+.eyebrow {
+  display: inline-block;
+  font-family: var(--ff-head);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin-bottom: 12px;
+}
+.eyebrow--inv { color: var(--accent); }
+
+.section-title {
+  font-family: var(--ff-head);
+  font-size: clamp(1.75rem, 3.5vw, 2.75rem);
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.section-title--left { text-align: left; }
+.section-title--inv  { color: #fff; }
+
+.section-sub {
+  font-size: 1.05rem;
+  color: var(--text-2);
+  max-width: 520px;
+  margin-inline: auto;
+  line-height: 1.7;
+}
+.section-sub--inv { color: rgba(255,255,255,.6); }
+
+/* ── Reveal animations ──────────────────────────────────────── */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity var(--tr-slow), transform var(--tr-slow);
+}
+[data-reveal].is-revealed { opacity: 1; transform: none; }

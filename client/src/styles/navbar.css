@@ -1,0 +1,181 @@
+/* ── navbar.css ──────────────────────────────────────────────── */
+
+.nav {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 900;
+  height: var(--nav-h);
+  border-bottom: 1px solid transparent;
+  transition: background var(--tr-slow), border-color var(--tr-slow), box-shadow var(--tr-slow);
+}
+.nav.is-scrolled {
+  background: var(--surface);
+  border-bottom-color: var(--border);
+  box-shadow: var(--sh-sm);
+}
+
+.nav__inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 100%;
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding-inline: var(--container-px);
+}
+
+/* Logo */
+.nav__logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.nav__logo-mark { font-size: 1.4rem; }
+.nav__logo-name {
+  font-family: var(--ff-head);
+  font-weight: 800;
+  font-size: 1.2rem;
+  color: #fff;
+  transition: color var(--tr-base);
+}
+.nav.is-scrolled .nav__logo-name { color: var(--text); }
+.nav__logo-accent { color: var(--primary); }
+
+/* Links */
+.nav__links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.nav__link {
+  font-family: var(--ff-head);
+  font-size: .83rem;
+  font-weight: 500;
+  color: rgba(255,255,255,.75);
+  padding: 7px 11px;
+  border-radius: var(--r-xs);
+  transition: color var(--tr-base), background var(--tr-base);
+}
+.nav__link:hover,
+.nav__link.is-active { color: #fff; background: rgba(255,255,255,.1); }
+.nav.is-scrolled .nav__link { color: var(--text-2); }
+.nav.is-scrolled .nav__link:hover,
+.nav.is-scrolled .nav__link.is-active {
+  color: var(--primary);
+  background: rgb(230 57 70/.08);
+}
+
+/* Actions */
+.nav__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Theme, user, and cart action toggles */
+.theme-toggle,
+.user-toggle,
+.cart-toggle {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.75);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background var(--tr-base), color var(--tr-base);
+}
+.theme-toggle:hover,
+.user-toggle:hover,
+.cart-toggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.nav.is-scrolled .theme-toggle,
+.nav.is-scrolled .user-toggle,
+.nav.is-scrolled .cart-toggle {
+  color: var(--text-2);
+}
+
+.nav.is-scrolled .theme-toggle:hover,
+.nav.is-scrolled .user-toggle:hover,
+.nav.is-scrolled .cart-toggle:hover {
+  background: var(--bg-alt);
+  color: var(--primary);
+}
+
+.theme-icon { width: 18px; height: 18px; }
+.theme-icon--moon { display: none; }
+[data-theme="dark"] .theme-icon--sun  { display: none; }
+[data-theme="dark"] .theme-icon--moon { display: block; }
+
+.cart-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  background: var(--primary);
+  color: #fff;
+  font-family: var(--ff-head);
+  font-size: .6rem;
+  font-weight: 700;
+  border-radius: var(--r-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* Nav CTA */
+.nav__cta { display: none; }
+@media (min-width: 900px) { .nav__cta { display: inline-flex; } }
+
+/* Hamburger */
+.nav__burger {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 36px;
+  height: 36px;
+  padding: 6px 0;
+}
+.nav__burger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #fff;
+  border-radius: 2px;
+  margin: 0 auto;
+  transition: transform var(--tr-base), opacity var(--tr-base);
+}
+.nav.is-scrolled .nav__burger span { background: var(--text); }
+.nav__burger.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav__burger.is-open span:nth-child(2) { opacity: 0; }
+.nav__burger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+@media (min-width: 960px) { .nav__burger { display: none; } }
+
+/* Overlay (mobile) */
+.nav__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: -1;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--tr-base);
+}
+.nav__overlay.is-open { opacity: 1; pointer-events: auto; }

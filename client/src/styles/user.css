@@ -1,0 +1,452 @@
+/* ── user.css — Premium Customer Profile & Account Styles ──────── */
+
+/* .user-panel and .user-panel__backdrop are now positioned by Framer Motion inline styles */
+/* These CSS classes are kept for naming/reference but positioning is handled via React */
+.user-panel {
+  /* Framer Motion handles positioning via style prop */
+}
+
+.user-panel__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 6, 13, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+
+.user-panel__container {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 460px;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.user-panel:not([hidden]) .user-panel__container {
+  transform: translateX(0);
+}
+
+/* Header */
+.user-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.user-panel__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user-panel__logo {
+  font-size: 1.5rem;
+}
+
+.user-panel__title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.user-panel__close-btn {
+  background: none;
+  border: none;
+  color: var(--text-2);
+  font-size: 1.75rem;
+  cursor: pointer;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s, color 0.3s;
+}
+
+.user-panel__close-btn:hover {
+  background: var(--bg-alt);
+  color: var(--text-h);
+}
+
+/* Content */
+.user-panel__content {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+/* Auth Tabs */
+.user-auth__tabs {
+  display: flex;
+  background: var(--bg-alt);
+  border-radius: 8px;
+  padding: 0.25rem;
+  margin-bottom: 2rem;
+}
+
+.user-auth__tab-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 0.6rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.3s, color 0.3s;
+}
+
+.user-auth__tab-btn.active {
+  background: var(--surface);
+  color: var(--primary);
+  box-shadow: var(--sh-xs);
+}
+
+.user-auth__form .form-group {
+  margin-bottom: 1.25rem;
+}
+
+/* Profile Header */
+.user-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+
+.user-avatar {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(230, 57, 70, 0.25);
+}
+
+.user-info {
+  flex-grow: 1;
+}
+
+.user-profile-name {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.user-profile-email {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-3);
+}
+
+.user-logout-btn {
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+}
+
+/* History Tabs */
+.user-history-tabs {
+  display: flex;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 1.25rem;
+}
+
+.history-tab-btn {
+  background: none;
+  border: none;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.3s, border-color 0.3s;
+}
+
+.history-tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.history-tab-content {
+  display: none;
+}
+
+.history-tab-content.active {
+  display: block;
+}
+
+/* History List & Cards */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.history-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: var(--sh-xs);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.history-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sh-sm);
+}
+
+.history-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.history-card__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.history-card__meta {
+  font-size: 0.8rem;
+  color: var(--text-3);
+  margin-bottom: 0.5rem;
+}
+
+.history-card__items {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem;
+}
+
+.history-card__item-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+  border-bottom: 1px dashed var(--border);
+}
+
+.history-card__item-row:last-child {
+  border-bottom: none;
+}
+
+/* Navbar action styling is handled by navbar.css */
+/* .user-toggle {
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.3s, color 0.3s;
+  position: relative;
+}
+
+.user-toggle:hover {
+  background: var(--bg-alt);
+  color: var(--primary);
+} */
+
+.user-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  color: var(--primary);
+  font-size: 10px;
+  line-height: 1;
+}
+
+/* Dark mode compatibility */
+[data-theme="dark"] .user-panel__backdrop {
+  background: rgba(4, 3, 7, 0.6);
+}
+
+/* ── Premium Order Stepper ───────────────────────────────────── */
+.order-stepper {
+  margin-top: 1rem;
+  padding: 1rem 0 0.5rem 0;
+  border-top: 1px dashed var(--border);
+}
+.order-stepper__title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+}
+.order-stepper__track {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+.order-stepper__line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--border);
+  transform: translateY(-50%);
+  z-index: 1;
+}
+.order-stepper__line-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: var(--primary);
+  width: 0%;
+  transition: width 0.4s ease;
+}
+.order-stepper__step {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--border);
+  border: 2.5px solid var(--surface-2);
+  z-index: 2;
+  position: relative;
+  transition: background 0.4s, border-color 0.4s, transform 0.3s;
+}
+.order-stepper__step.active {
+  background: var(--primary);
+  border-color: var(--surface-2);
+  transform: scale(1.2);
+}
+.order-stepper__step.completed {
+  background: #10b981;
+  border-color: var(--surface-2);
+}
+.order-stepper__step.active::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1px solid var(--primary);
+  animation: pulse-ring 1.5s infinite;
+}
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+.order-stepper__labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-3);
+  padding: 0 4px;
+}
+.order-stepper__labels span.active {
+  color: var(--primary);
+}
+.order-stepper__labels span.completed {
+  color: #10b981;
+}
+
+/* ── Danger Zone & Deletion Modal ────────────────────────────── */
+.user-danger-zone {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.user-danger-zone__title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #e11d48;
+  margin-bottom: 0.5rem;
+}
+.user-danger-zone__desc {
+  font-size: 0.78rem;
+  color: var(--text-3);
+  line-height: 1.4;
+  margin-bottom: 1rem;
+}
+
+/* ── Deletion Confirmation Modal Card (inner) ────────────────── */
+/* The .confirm-modal class is now the INNER CARD, not the overlay */
+/* Overlay is handled by the Framer Motion container div */
+.confirm-modal {
+  /* Card styles only — layout handled by Framer Motion inline styles */
+}
+
+.confirm-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 6, 13, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.confirm-modal__container {
+  position: relative;
+  z-index: 2102;
+  width: 100%;
+  max-width: 400px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--sh-lg);
+  padding: 1.75rem;
+  transform: scale(0.95);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.confirm-modal:not([hidden]) .confirm-modal__container {
+  transform: scale(1);
+}
+.confirm-modal__title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-h);
+  margin: 0 0 0.5rem 0;
+}
+.confirm-modal__desc {
+  font-size: 0.85rem;
+  color: var(--text-2);
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+}
+.confirm-modal__buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 1.5rem;
+}
