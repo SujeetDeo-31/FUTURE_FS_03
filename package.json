@@ -5,7 +5,7 @@
   "description": "One-Bite Restaurant — Unified Full-Stack Platform",
   "main": "server/server.js",
   "scripts": {
-    "postinstall": "npm install --prefix client",
+    "postinstall": "npm install --prefix client --include=dev",
     "build": "npm run build --prefix client",
     "start": "node server/server.js",
     "reset-admin": "node server/scripts/reset_admin.js",
