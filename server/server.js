@@ -13,6 +13,15 @@ dotenv.config({
   override: true 
 });
 
+// ── Dev-only DNS fix ──────────────────────────────────────────
+// Local Indian ISPs (Jio/Airtel) block MongoDB SRV record lookups.
+// This override only runs in development — never on Render (NODE_ENV=production).
+if (process.env.NODE_ENV === 'development') {
+  const { default: dns } = await import('dns');
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+}
+
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
