@@ -701,7 +701,7 @@ export const sendOwnerReservationNotification = async (reservation) => {
     };
 
     const info = await client.sendMail(mailOptions);
-    console.log(`[EmailService] Owner Reservation Alert email successfully sent. MessageID: ${info.messageId}`);
+    console.log(`[EmailService] Owner Reservation Notification email successfully sent. MessageID: ${info.messageId}`);
     return info;
   } catch (err) {
     console.error('[EmailService] Error occurred sending owner reservation email alert:', err.message);
@@ -939,7 +939,7 @@ export const sendOwnerOrderNotification = async (order) => {
     };
 
     const info = await client.sendMail(mailOptions);
-    console.log(`[EmailService] Owner Order Alert email successfully sent. MessageID: ${info.messageId}`);
+    console.log(`[EmailService] Owner Order Notification email successfully sent. MessageID: ${info.messageId}`);
     return info;
   } catch (err) {
     console.error('[EmailService] Error occurred sending owner order alert email:', err.message);
