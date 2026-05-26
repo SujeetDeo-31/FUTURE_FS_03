@@ -1,16 +1,39 @@
 'use strict';
 
 import nodemailer from 'nodemailer';
-import dns from 'dns';
-
-// Force IPv4 DNS resolution app-wide to prevent ENETUNREACH on cloud hosts that block IPv6 outbound routes
-if (dns && typeof dns.setDefaultResultOrder === 'function') {
-  dns.setDefaultResultOrder('ipv4first');
-}
+import { Resend } from 'resend';
 
 let transporter = null;
 let transporterPromise = null;
 let isEthereal = false;
+
+/**
+ * Creates a nodemailer-compatible transporter backed by the Resend HTTP API.
+ * Resend sends emails over HTTPS (port 443) — never blocked by cloud firewalls.
+ * @param {string} apiKey - The RESEND_API_KEY environment variable.
+ */
+function createResendTransporter(apiKey) {
+  const resendClient = new Resend(apiKey);
+  // FROM_EMAIL must be a Resend-verified domain address (e.g. noreply@yourdomain.com)
+  // For testing only, you may use: onboarding@resend.dev
+  const fromEmail = process.env.FROM_EMAIL || process.env.EMAIL_USER || 'onboarding@resend.dev';
+
+  return {
+    sendMail: async (mailOptions) => {
+      const { data, error } = await resendClient.emails.send({
+        from: fromEmail,
+        to: mailOptions.to,
+        subject: mailOptions.subject,
+        html: mailOptions.html,
+      });
+      if (error) {
+        throw new Error(`Resend API error: ${JSON.stringify(error)}`);
+      }
+      console.log(`[EmailService] ✅ Resend delivery successful. ID: ${data.id}`);
+      return { messageId: data.id };
+    },
+  };
+}
 
 // Initialize email transporter with thread-safe caching to prevent concurrent race conditions
 async function initTransporter() {
@@ -19,54 +42,26 @@ async function initTransporter() {
 
   transporterPromise = (async () => {
     let activeTransporter = null;
-    const user = process.env.EMAIL_USER;
-    // Gmail App Passwords are shown with spaces for readability but must be sent without spaces
-    const pass = process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s+/g, '') : undefined;
-    const host = process.env.EMAIL_HOST;
-    const port = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT) : 587;
+    const resendApiKey = process.env.RESEND_API_KEY;
 
     console.log(`[EmailService] Environment Variables Status:`);
-    console.log(`  - EMAIL_USER: ${user ? 'Present (' + user + ')' : 'NOT PRESENT'}`);
-    console.log(`  - EMAIL_PASS: ${pass ? 'Present (' + pass.length + ' chars)' : 'NOT PRESENT'}`);
-    console.log(`  - EMAIL_HOST: ${host || 'Not set (will use Gmail service shorthand)'}`);
-    console.log(`  - EMAIL_PORT: ${port}`);
+    console.log(`  - RESEND_API_KEY: ${resendApiKey ? 'Present ✅' : 'NOT PRESENT'}`);
+    console.log(`  - FROM_EMAIL: ${process.env.FROM_EMAIL || process.env.EMAIL_USER || 'onboarding@resend.dev (default)'}`);
 
-    if (user && pass) {
-      if (host) {
-        console.log(`[EmailService] SMTP credentials found. Connecting via custom host ${host}:${port}...`);
-        activeTransporter = nodemailer.createTransport({
-          host,
-          port,
-          secure: port === 465,       // SSL for port 465, STARTTLS for 587
-          requireTLS: port === 587,   // Enforce TLS on port 587, reject plain-text connections
-          family: 4,                  // Force IPv4 socket-level — prevents ENETUNREACH on cloud hosts
-          auth: { user, pass },
-          connectionTimeout: 10000,   // 10s to establish TCP connection
-          greetingTimeout: 10000,     // 10s waiting for initial SMTP server greeting
-          socketTimeout: 15000,       // 15s max idle time during active data transfer
-        });
-      } else {
-        console.log('[EmailService] Gmail credentials found. Connecting via Gmail service shorthand...');
-        activeTransporter = nodemailer.createTransport({
-          service: 'gmail',
-          auth: { user, pass },
-        });
-      }
-
-      try {
-        console.log('[EmailService] Verifying SMTP connection...');
-        await activeTransporter.verify();
-        console.log('[EmailService] ✅ SMTP connection VERIFIED. Ready to send real emails!');
-      } catch (err) {
-        console.error(`[EmailService] SMTP verification FAILED: ${err.message}`);
-        console.error('[EmailService] Falling back to Ethereal test account...');
-        activeTransporter = null;
-      }
+    // ── Priority 1: Resend HTTP API ──────────────────────────────────────────
+    // Works on all cloud platforms (Render, Vercel, Railway, etc.)
+    // Sends over HTTPS port 443 — completely bypasses SMTP port blocks.
+    if (resendApiKey) {
+      console.log('[EmailService] Resend API key found. Initializing HTTP email transport...');
+      activeTransporter = createResendTransporter(resendApiKey);
+      console.log('[EmailService] ✅ Resend transporter ready. Emails will be delivered via HTTPS API.');
     }
 
-    // Fallback if SMTP failed or credentials missing
+    // ── Fallback: Ethereal preview emails ────────────────────────────────────
+    // Used automatically when RESEND_API_KEY is not set (local dev / staging).
+    // Emails are NOT delivered but can be previewed at https://ethereal.email
     if (!activeTransporter) {
-      console.log('[EmailService] Creating Ethereal test account for preview emails...');
+      console.log('[EmailService] No Resend API key. Creating Ethereal preview account...');
       try {
         const testAccount = await nodemailer.createTestAccount();
         isEthereal = true;
@@ -283,8 +278,9 @@ export const sendReservationEmail = async (reservation) => {
       </html>
     `;
 
+    const fromAddress = process.env.FROM_EMAIL || process.env.EMAIL_USER || 'onboarding@resend.dev';
     const mailOptions = {
-      from: `"One-Bite Restaurant" <${process.env.EMAIL_USER}>`,
+      from: `"One-Bite Restaurant" <${fromAddress}>`,
       to: reservation.email,
       subject: 'Your One-Bite Reservation Confirmation 🍔',
       html: htmlContent,
@@ -388,8 +384,9 @@ export const sendReservationConfirmedEmail = async (reservation) => {
       </html>
     `;
 
+    const fromAddress = process.env.FROM_EMAIL || process.env.EMAIL_USER || 'onboarding@resend.dev';
     const mailOptions = {
-      from: `"One-Bite Restaurant" <${process.env.EMAIL_USER}>`,
+      from: `"One-Bite Restaurant" <${fromAddress}>`,
       to: reservation.email,
       subject: 'Your One-Bite Reservation has been CONFIRMED! 🌿',
       html: htmlContent,
@@ -488,8 +485,9 @@ export const sendReservationRejectedEmail = async (reservation) => {
       </html>
     `;
 
+    const fromAddress = process.env.FROM_EMAIL || process.env.EMAIL_USER || 'onboarding@resend.dev';
     const mailOptions = {
-      from: `"One-Bite Restaurant" <${process.env.EMAIL_USER}>`,
+      from: `"One-Bite Restaurant" <${fromAddress}>`,
       to: reservation.email,
       subject: 'One-Bite Reservation Update: Fully Booked 🍽️',
       html: htmlContent,
@@ -585,8 +583,9 @@ export const sendReservationCancelledEmail = async (reservation) => {
       </html>
     `;
 
+    const fromAddress = process.env.FROM_EMAIL || process.env.EMAIL_USER || 'onboarding@resend.dev';
     const mailOptions = {
-      from: `"One-Bite Restaurant" <${process.env.EMAIL_USER}>`,
+      from: `"One-Bite Restaurant" <${fromAddress}>`,
       to: reservation.email,
       subject: 'One-Bite Reservation Cancelled 🧹',
       html: htmlContent,
@@ -687,9 +686,16 @@ export const sendOwnerReservationNotification = async (reservation) => {
       </html>
     `;
 
+    const ownerEmail = process.env.OWNER_EMAIL || process.env.EMAIL_USER;
+    if (!ownerEmail) {
+      console.warn('[EmailService] ⚠️ Skipping owner reservation alert email because neither OWNER_EMAIL nor EMAIL_USER is configured in environment variables.');
+      return null;
+    }
+
+    const fromAddress = process.env.FROM_EMAIL || process.env.EMAIL_USER || 'onboarding@resend.dev';
     const mailOptions = {
-      from: `"One-Bite System" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER, // Sends directly to owner!
+      from: `"One-Bite System" <${fromAddress}>`,
+      to: ownerEmail,
       subject: `🔔 New Reservation Alert — ${reservation.name} [${reservation.guestCount} Guests]`,
       html: htmlContent,
     };
@@ -810,8 +816,9 @@ export const sendOrderConfirmationEmail = async (order) => {
 
     // Only send if we have a customer email address mapped
     if (order.customerEmail) {
+      const fromAddress = process.env.FROM_EMAIL || process.env.EMAIL_USER || 'onboarding@resend.dev';
       const mailOptions = {
-        from: `"One-Bite Restaurant" <${process.env.EMAIL_USER}>`,
+        from: `"One-Bite Restaurant" <${fromAddress}>`,
         to: order.customerEmail,
         subject: `Your One-Bite Order Invoice Summary — #${order._id.toString().slice(-6).toUpperCase()} 🍕`,
         html: htmlContent,
@@ -917,9 +924,16 @@ export const sendOwnerOrderNotification = async (order) => {
       </html>
     `;
 
+    const ownerEmail = process.env.OWNER_EMAIL || process.env.EMAIL_USER;
+    if (!ownerEmail) {
+      console.warn('[EmailService] ⚠️ Skipping owner order alert email because neither OWNER_EMAIL nor EMAIL_USER is configured in environment variables.');
+      return null;
+    }
+
+    const fromAddress = process.env.FROM_EMAIL || process.env.EMAIL_USER || 'onboarding@resend.dev';
     const mailOptions = {
-      from: `"One-Bite System" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER, // Sends directly to owner!
+      from: `"One-Bite System" <${fromAddress}>`,
+      to: ownerEmail,
       subject: `🔔 New Order Placed — #${order._id.toString().slice(-6).toUpperCase()} [₹${order.subtotal + Math.round(order.subtotal * 0.05)}]`,
       html: htmlContent,
     };
@@ -1034,8 +1048,9 @@ export const sendOrderStatusUpdateEmail = async (order) => {
 
     // Only send if we have a customer email address mapped
     if (order.customerEmail) {
+      const fromAddress = process.env.FROM_EMAIL || process.env.EMAIL_USER || 'onboarding@resend.dev';
       const mailOptions = {
-        from: `"One-Bite Restaurant" <${process.env.EMAIL_USER}>`,
+        from: `"One-Bite Restaurant" <${fromAddress}>`,
         to: order.customerEmail,
         subject: `One-Bite Order Update: ${order.status.toUpperCase()} ${statusIcon} — #${order._id.toString().slice(-6).toUpperCase()}`,
         html: htmlContent,
