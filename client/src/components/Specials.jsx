@@ -66,8 +66,8 @@ export default function Specials() {
                 <p className="special-card__desc">Crispy wood-fired sourdough crust, rich makhani sauce base, soft marinated paneer cubes, buffalo mozzarella, and fresh coriander leaves.</p>
                 <div className="special-card__footer">
                   <strong className="special-card__price">₹499</strong>
-                  <button className="btn btn--outline btn--sm" onClick={() => handleOrderSpecial(5)}>
-                    Order
+                  <button className="btn btn--primary btn--sm" onClick={() => handleOrderSpecial(5)}>
+                    Order Now
                   </button>
                 </div>
               </div>
@@ -89,8 +89,8 @@ export default function Specials() {
                 <p className="special-card__desc">Warm cardamom-spiced Belgian chocolate lava cake with an oozing white chocolate center, served with warm gulab jamun and vanilla bean gelato.</p>
                 <div className="special-card__footer">
                   <strong className="special-card__price">₹299</strong>
-                  <button className="btn btn--outline btn--sm" onClick={() => handleOrderSpecial(13)}>
-                    Order
+                  <button className="btn btn--primary btn--sm" onClick={() => handleOrderSpecial(13)}>
+                    Order Now
                   </button>
                 </div>
               </div>
