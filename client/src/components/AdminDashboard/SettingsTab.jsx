@@ -1,5 +1,160 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
+// ── Inline QR code generator using qrcode.js CDN ──────────────
+// Dynamically loads the script once on mount
+function useQRScript() {
+  const [ready, setReady] = useState(!!window.QRCode);
+  useEffect(() => {
+    if (window.QRCode) { setReady(true); return; }
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    script.onload = () => setReady(true);
+    document.head.appendChild(script);
+  }, []);
+  return ready;
+}
+
+function QRGenerator() {
+  const qrReady = useQRScript();
+  const [tableNum, setTableNum] = useState('');
+  const [generated, setGenerated] = useState(false);
+  const qrRef = useRef(null);
+  const qrInstance = useRef(null);
+
+  const siteUrl = window.location.origin;
+
+  const generateQR = () => {
+    if (!tableNum.trim() || !qrReady) return;
+
+    const url = `${siteUrl}/?table=${encodeURIComponent(tableNum.trim())}`;
+
+    // Clear previous QR
+    if (qrRef.current) qrRef.current.innerHTML = '';
+    qrInstance.current = null;
+
+    qrInstance.current = new window.QRCode(qrRef.current, {
+      text: url,
+      width: 220,
+      height: 220,
+      colorDark: '#1a1a2e',
+      colorLight: '#ffffff',
+      correctLevel: window.QRCode.CorrectLevel.H,
+    });
+
+    setGenerated(true);
+  };
+
+  const downloadQR = () => {
+    const canvas = qrRef.current?.querySelector('canvas');
+    if (!canvas) return;
+
+    // Build a styled canvas with label
+    const pad = 24;
+    const labelH = 48;
+    const out = document.createElement('canvas');
+    out.width  = canvas.width  + pad * 2;
+    out.height = canvas.height + pad * 2 + labelH;
+    const ctx = out.getContext('2d');
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, out.width, out.height);
+
+    ctx.drawImage(canvas, pad, pad);
+
+    ctx.fillStyle = '#e63946';
+    ctx.fillRect(0, out.height - labelH, out.width, labelH);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`🍔 One-Bite — Table ${tableNum.trim()}`, out.width / 2, out.height - labelH / 2 + 6);
+
+    const link = document.createElement('a');
+    link.download = `one-bite-table-${tableNum.trim()}-qr.png`;
+    link.href = out.toDataURL('image/png');
+    link.click();
+  };
+
+  return (
+    <div
+      style={{
+        padding: '2rem',
+        borderRadius: '16px',
+        background: 'var(--bg-alt)',
+        border: '1px solid var(--border)',
+        marginTop: '1.5rem',
+      }}
+    >
+      <h3
+        style={{
+          fontSize: '1.1rem',
+          fontWeight: 800,
+          fontFamily: 'var(--ff-head)',
+          color: 'var(--text-h)',
+          marginBottom: '0.4rem',
+          textAlign: 'center',
+        }}
+      >
+        🪑 Table QR Code Generator
+      </h3>
+      <p style={{ fontSize: '0.82rem', color: 'var(--text-2)', textAlign: 'center', marginBottom: '1.5rem' }}>
+        Generate a printable QR code for each table. Customers scan it to order directly.
+      </p>
+
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '1.25rem' }}>
+        <input
+          className="form-input"
+          type="text"
+          id="tableNumberInput"
+          placeholder="e.g. T1, T2, Table-5..."
+          value={tableNum}
+          onChange={(e) => { setTableNum(e.target.value); setGenerated(false); }}
+          maxLength={10}
+          style={{ flex: 1, padding: '10px 14px', fontSize: '0.9rem', borderRadius: '8px' }}
+        />
+        <button
+          className="btn btn--primary"
+          id="generateQrBtn"
+          onClick={generateQR}
+          disabled={!tableNum.trim() || !qrReady}
+          style={{ padding: '10px 18px', borderRadius: '8px', fontWeight: 700, fontSize: '0.85rem', whiteSpace: 'nowrap' }}
+        >
+          {qrReady ? 'Generate' : 'Loading…'}
+        </button>
+      </div>
+
+      {/* QR Output */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '1rem',
+          minHeight: generated ? 'auto' : '0',
+        }}
+      >
+        <div ref={qrRef} style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: generated ? '0 8px 24px rgba(0,0,0,0.12)' : 'none' }} />
+
+        {generated && (
+          <>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-3)', textAlign: 'center' }}>
+              Scan links to: <code style={{ fontSize: '0.72rem', background: 'var(--bg)', padding: '2px 6px', borderRadius: '4px' }}>{siteUrl}/?table={tableNum.trim()}</code>
+            </p>
+            <button
+              className="btn btn--outline"
+              id="downloadQrBtn"
+              onClick={downloadQR}
+              style={{ padding: '10px 22px', borderRadius: '8px', fontWeight: 700, fontSize: '0.85rem' }}
+            >
+              ⬇ Download QR Code
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Main SettingsTab ───────────────────────────────────────────
 export default function SettingsTab() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -46,10 +201,11 @@ export default function SettingsTab() {
 
   return (
     <div className="admin-tab-content active" id="adminTabSettings" style={{ maxWidth: '500px', margin: '1rem auto' }}>
-      <div 
-        className="admin-login-card" 
-        style={{ 
-          padding: '2.5rem', 
+      {/* Password Change Card */}
+      <div
+        className="admin-login-card"
+        style={{
+          padding: '2.5rem',
           borderRadius: '16px',
           background: 'var(--bg-alt)',
           border: '1px solid var(--border)',
@@ -64,12 +220,12 @@ export default function SettingsTab() {
         </p>
 
         {status.msg && (
-          <div 
-            style={{ 
-              marginBottom: '1.25rem', 
-              padding: '12px 16px', 
-              borderRadius: '8px', 
-              fontSize: '0.85rem', 
+          <div
+            style={{
+              marginBottom: '1.25rem',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              fontSize: '0.85rem',
               textAlign: 'center',
               background: status.type === 'success' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
               color: status.type === 'success' ? '#10b981' : '#ef4444',
@@ -144,6 +300,9 @@ export default function SettingsTab() {
           </button>
         </form>
       </div>
+
+      {/* QR Code Generator */}
+      <QRGenerator />
     </div>
   );
 }

@@ -34,7 +34,7 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['received', 'preparing', 'ready', 'out for delivery', 'completed', 'cancelled'],
+      enum: ['received', 'preparing', 'out for delivery', 'completed', 'cancelled'],
       default: 'received',
     },
     statusHistory: [
@@ -44,9 +44,13 @@ const orderSchema = new mongoose.Schema(
       }
     ],
     // Customer contact for order follow-up (optional at this stage)
-    customerName:  { type: String, trim: true, default: '' },
-    customerEmail: { type: String, trim: true, lowercase: true, default: '' },
-    notes:         { type: String, trim: true, maxlength: 300, default: '' },
+    customerName:    { type: String, trim: true, default: '' },
+    customerEmail:   { type: String, trim: true, lowercase: true, default: '' },
+    deliveryAddress: { type: String, trim: true, maxlength: 400, default: '' },
+    notes:           { type: String, trim: true, maxlength: 300, default: '' },
+    // Dine-in / QR table ordering fields
+    orderType:   { type: String, enum: ['delivery', 'dine-in'], default: 'delivery' },
+    tableNumber: { type: String, trim: true, default: '' },
   },
   {
     timestamps: true,

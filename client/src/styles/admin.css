@@ -484,11 +484,6 @@
   border: 1px solid rgba(124, 58, 237, 0.25);
 }
 
-.badge--ready {
-  background: rgba(8, 145, 178, 0.12);
-  color: #0891b2;
-  border: 1px solid rgba(8, 145, 178, 0.25);
-}
 
 .badge--out-for-delivery {
   background: rgba(234, 88, 12, 0.12);

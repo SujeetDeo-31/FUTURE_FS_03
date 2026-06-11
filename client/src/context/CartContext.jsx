@@ -3,13 +3,17 @@ import { useAuth } from './AuthContext';
 
 const CartContext = createContext();
 
-const CART_KEY = 'ob-cart';
-const SESSION_KEY = 'ob-session';
+const CART_KEY      = 'ob-cart';
+const SESSION_KEY   = 'ob-session';
+const TABLE_KEY     = 'ob-table';
+const DINEIN_NAME_KEY = 'ob-dinein-name';
 
 export function CartProvider({ children }) {
   const { user } = useAuth();
   const [cartItems, setCartItems] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
+
+  // ── Session ID ─────────────────────────────────────────────
   const [sessionId] = useState(() => {
     let id = localStorage.getItem(SESSION_KEY);
     if (!id) {
@@ -19,23 +23,59 @@ export function CartProvider({ children }) {
     return id;
   });
 
-  // Load cart from localStorage on mount
+  // ── Dine-In / QR Table State ────────────────────────────────
+  // On mount: check URL for ?table= param, persist to localStorage
+  const [tableNumber, setTableNumber] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlTable = params.get('table');
+    if (urlTable) {
+      localStorage.setItem(TABLE_KEY, urlTable);
+      return urlTable;
+    }
+    return localStorage.getItem(TABLE_KEY) || '';
+  });
+
+  // dineInName — name customer enters at the welcome modal
+  const [dineInName, setDineInName] = useState(() => {
+    return localStorage.getItem(DINEIN_NAME_KEY) || '';
+  });
+
+  // Show welcome modal when table is detected but name not yet set
+  const [showTableModal, setShowTableModal] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlTable = params.get('table');
+    const savedName = localStorage.getItem(DINEIN_NAME_KEY);
+    // Show modal if coming via QR (table in URL) and name not already stored
+    return !!urlTable && !savedName;
+  });
+
+  const confirmDineInName = (name) => {
+    const trimmed = name.trim();
+    setDineInName(trimmed);
+    localStorage.setItem(DINEIN_NAME_KEY, trimmed);
+    setShowTableModal(false);
+  };
+
+  const clearTableSession = () => {
+    setTableNumber('');
+    setDineInName('');
+    localStorage.removeItem(TABLE_KEY);
+    localStorage.removeItem(DINEIN_NAME_KEY);
+  };
+
+  // ── Cart Persistence ────────────────────────────────────────
   useEffect(() => {
     try {
       const saved = localStorage.getItem(CART_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Map back array structures
-        if (Array.isArray(parsed)) {
-          setCartItems(parsed);
-        }
+        if (Array.isArray(parsed)) setCartItems(parsed);
       }
     } catch (err) {
       console.warn('[CartContext] Failed to load cart cache:', err);
     }
   }, []);
 
-  // Save cart to localStorage on changes
   useEffect(() => {
     try {
       localStorage.setItem(CART_KEY, JSON.stringify(cartItems));
@@ -44,6 +84,7 @@ export function CartProvider({ children }) {
     }
   }, [cartItems]);
 
+  // ── Cart Actions ────────────────────────────────────────────
   const addToCart = (item) => {
     setCartItems(prev => {
       const existing = prev.find(i => i.id === item.id);
@@ -59,53 +100,62 @@ export function CartProvider({ children }) {
   };
 
   const updateQuantity = (itemId, qty) => {
-    if (qty <= 0) {
-      removeFromCart(itemId);
-      return;
-    }
+    if (qty <= 0) { removeFromCart(itemId); return; }
     setCartItems(prev => prev.map(i => i.id === itemId ? { ...i, quantity: qty } : i));
   };
 
-  const clearCart = () => {
-    setCartItems([]);
-  };
+  const clearCart = () => setCartItems([]);
 
-  const getItemCount = () => {
-    return cartItems.reduce((acc, item) => acc + item.quantity, 0);
-  };
+  const getItemCount = () => cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const getSubtotal  = () => cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-  const getSubtotal = () => {
-    return cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  };
-
-  const checkout = async (notes = '') => {
+  // ── Checkout ────────────────────────────────────────────────
+  // guestDetails = { name, email, address } — only used when user is not logged in
+  const checkout = async (notes = '', guestDetails = null) => {
     if (cartItems.length === 0) return;
+
+    const isDineIn = !!tableNumber;
+    const isGuest  = !user;
+
+    // Determine name and email from context:
+    // - Logged-in: use account data
+    // - Dine-in guest: name comes from the table modal (dineInName), email unknown
+    // - Delivery guest: name + email come from guestDetails form
+    const resolvedName  = isDineIn
+      ? dineInName
+      : (user ? user.name  : guestDetails?.name  || '');
+    const resolvedEmail = user
+      ? user.email
+      : guestDetails?.email || '';
+    const resolvedAddress = isDineIn ? '' : (guestDetails?.address || '');
 
     const payload = {
       sessionId,
-      customerEmail: user ? user.email : undefined,
-      customerName: user ? user.name : undefined,
+      customerName:    resolvedName,
+      customerEmail:   resolvedEmail,
+      deliveryAddress: resolvedAddress,
       items: cartItems.map(item => ({
-        itemId: item.id,
-        name: item.name,
-        price: item.price,
+        itemId:   item.id,
+        name:     item.name,
+        price:    item.price,
         quantity: item.quantity,
       })),
-      subtotal: getSubtotal(),
-      notes: notes.trim() || '',
+      subtotal:    getSubtotal(),
+      notes:       notes.trim() || '',
+      orderType:   isDineIn ? 'dine-in' : 'delivery',
+      tableNumber: isDineIn ? tableNumber : '',
+      isGuest,
     };
 
     const res = await fetch('/api/orders', {
-      method: 'POST',
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify(payload),
     });
 
     const json = await res.json();
-    if (!res.ok) {
-      throw new Error(json.message || 'Failed to submit order. Please try again.');
-    }
+    if (!res.ok) throw new Error(json.message || 'Failed to submit order. Please try again.');
 
     clearCart();
     return json;
@@ -122,8 +172,14 @@ export function CartProvider({ children }) {
         updateQuantity,
         clearCart,
         itemCount: getItemCount(),
-        subtotal: getSubtotal(),
+        subtotal:  getSubtotal(),
         checkout,
+        // Dine-in state
+        tableNumber,
+        dineInName,
+        showTableModal,
+        confirmDineInName,
+        clearTableSession,
       }}
     >
       {children}

@@ -253,7 +253,7 @@ export default function UserDrawer() {
                             className="form-input"
                             type="text"
                             id="signupName"
-                            placeholder="Jane Smith"
+                            placeholder="Rohan Kapoor"
                             value={signupName}
                             onChange={(e) => setSignupName(e.target.value)}
                             required
@@ -267,7 +267,7 @@ export default function UserDrawer() {
                             className="form-input"
                             type="email"
                             id="signupEmail"
-                            placeholder="jane@example.com"
+                            placeholder="rohan@example.com"
                             value={signupEmail}
                             onChange={(e) => setSignupEmail(e.target.value)}
                             required

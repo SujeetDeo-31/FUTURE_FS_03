@@ -214,7 +214,7 @@ export default function ReservationForm() {
                       className={`form-input ${errors.name ? 'is-error' : ''}`}
                       type="text"
                       id="guestName"
-                      placeholder="Jane Smith"
+                      placeholder="Priya Nair"
                       value={name}
                       onChange={(e) => handleChange('name', e.target.value, setName)}
                       onBlur={(e) => handleBlur('name', e.target.value)}
@@ -230,7 +230,7 @@ export default function ReservationForm() {
                       className={`form-input ${errors.email ? 'is-error' : ''}`}
                       type="email"
                       id="guestEmail"
-                      placeholder="jane@example.com"
+                      placeholder="priya@example.com"
                       value={email}
                       onChange={(e) => handleChange('email', e.target.value, setEmail)}
                       onBlur={(e) => handleBlur('email', e.target.value)}

@@ -746,14 +746,17 @@ export const sendOrderConfirmationEmail = async (order) => {
       <body>
         <div class="wrapper">
           <div class="container">
-            <div class="header" style="background-color: #1d3557;">
-              <div class="logo">🍕</div>
-              <h1>Order Confirmed!</h1>
+            <div class="header" style="background-color: ${order.orderType === 'dine-in' ? '#1a1a2e' : '#1d3557'};">
+              <div class="logo">${order.orderType === 'dine-in' ? '🪑' : '🍕'}</div>
+              <h1>${order.orderType === 'dine-in' ? 'Dine-In Order Confirmed!' : 'Order Confirmed!'}</h1>
             </div>
             <div class="content">
               <div class="greeting">Hi ${order.customerName || 'Valued Customer'},</div>
               <div class="message">
-                Thank you for your order! We are starting to prepare your tandoori items immediately. Here is your detailed invoice summary:
+                ${order.orderType === 'dine-in'
+                  ? `Your dine-in order for <strong>Table ${order.tableNumber}</strong> has been received! Our kitchen is starting preparation right away.`
+                  : 'Thank you for your order! We are starting to prepare your tandoori items immediately. Here is your detailed invoice summary:'
+                }
               </div>
               
               <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
@@ -774,11 +777,25 @@ export const sendOrderConfirmationEmail = async (order) => {
                   <td class="details-cell-value" style="font-family: monospace; font-size: 13px; font-weight: bold;">#${order._id.toString().slice(-6).toUpperCase()}</td>
                 </tr>
                 <tr>
+                  <td class="details-cell-label">Order Type</td>
+                  <td class="details-cell-value" style="font-weight: 700; color: ${order.orderType === 'dine-in' ? '#7c3aed' : '#ea580c'};">${ order.orderType === 'dine-in' ? '🪑 DINE-IN' : '🛵 DELIVERY'}</td>
+                </tr>
+                ${order.orderType === 'dine-in' ? `
+                <tr>
+                  <td class="details-cell-label">Table</td>
+                  <td class="details-cell-value" style="font-weight: 700;">Table ${order.tableNumber}</td>
+                </tr>` : ''}
+                ${order.deliveryAddress ? `
+                <tr>
+                  <td class="details-cell-label">Delivery Address</td>
+                  <td class="details-cell-value">${order.deliveryAddress}</td>
+                </tr>` : ''}
+                <tr>
                   <td class="details-cell-label">Ordered On</td>
                   <td class="details-cell-value">${formattedDate}</td>
                 </tr>
                 <tr>
-                  <td class="details-cell-label">GST & SGST (5%)</td>
+                  <td class="details-cell-label">GST &amp; SGST (5%)</td>
                   <td class="details-cell-value">₹${Math.round(order.subtotal * 0.05)}</td>
                 </tr>
                 <tr>
@@ -867,13 +884,16 @@ export const sendOwnerOrderNotification = async (order) => {
         <div class="wrapper">
           <div class="container">
             <div class="header">
-              <div class="logo">🔔</div>
-              <h1>New Food Order</h1>
+              <div class="logo">${order.orderType === 'dine-in' ? '🪑' : '🔔'}</div>
+              <h1>${order.orderType === 'dine-in' ? 'New Dine-In Order' : 'New Delivery Order'}</h1>
             </div>
             <div class="content">
               <div class="greeting">Hello Chef Kabir Sen,</div>
               <div class="message">
-                A customer has just submitted a new food delivery / dine-in order! Details are below:
+                ${ order.orderType === 'dine-in'
+                  ? `A dine-in order has just been placed for <strong>Table ${order.tableNumber}</strong>. Details are below:`
+                  : 'A customer has just submitted a new delivery order! Details are below:'
+                }
               </div>
               
               <table class="details-table">
@@ -882,6 +902,15 @@ export const sendOwnerOrderNotification = async (order) => {
                   <td class="details-cell-value" style="font-family: monospace; font-size: 13px; font-weight: bold;">#${order._id.toString().slice(-6).toUpperCase()}</td>
                 </tr>
                 <tr>
+                  <td class="details-cell-label">Order Type</td>
+                  <td class="details-cell-value" style="font-weight: 700; color: ${order.orderType === 'dine-in' ? '#7c3aed' : '#ea580c'};">${ order.orderType === 'dine-in' ? '🪑 DINE-IN' : '🛵 DELIVERY'}</td>
+                </tr>
+                ${order.orderType === 'dine-in' ? `
+                <tr>
+                  <td class="details-cell-label">Table</td>
+                  <td class="details-cell-value" style="font-weight: 700;">Table ${order.tableNumber}</td>
+                </tr>` : ''}
+                <tr>
                   <td class="details-cell-label">Customer Name</td>
                   <td class="details-cell-value">${order.customerName || 'Guest'}</td>
                 </tr>
@@ -889,6 +918,11 @@ export const sendOwnerOrderNotification = async (order) => {
                   <td class="details-cell-label">Email Address</td>
                   <td class="details-cell-value">${order.customerEmail || '—'}</td>
                 </tr>
+                ${order.deliveryAddress ? `
+                <tr>
+                  <td class="details-cell-label">Delivery Address</td>
+                  <td class="details-cell-value" style="font-weight: 600;">${order.deliveryAddress}</td>
+                </tr>` : ''}
                 <tr>
                   <td class="details-cell-label">Ordered On</td>
                   <td class="details-cell-value">${formattedDate}</td>
@@ -947,13 +981,20 @@ export const sendOwnerOrderNotification = async (order) => {
 };
 
 /**
- * Send customer order STATUS UPDATE email (e.g., preparing, ready, completed)
+ * Send customer order STATUS UPDATE email.
+ * Dine-in: fires on completed + cancelled only.
+ * Delivery: fires on received, out for delivery, cancelled.
  */
 export const sendOrderStatusUpdateEmail = async (order) => {
   try {
-    const allowedStatuses = ['received', 'out for delivery', 'cancelled'];
+    // Dine-in orders: only email on completed or cancelled (no delivery stages)
+    // Delivery orders: email on received, out for delivery, cancelled
+    const allowedStatuses = order.orderType === 'dine-in'
+      ? ['completed', 'cancelled']
+      : ['received', 'out for delivery', 'cancelled'];
+
     if (!allowedStatuses.includes(order.status)) {
-      console.log(`[EmailService] Skipping order status update email for stage "${order.status}" (only received, out for delivery, cancelled are enabled).`);
+      console.log(`[EmailService] Skipping order status email for "${order.status}" (orderType: ${order.orderType || 'delivery'}).`);
       return null;
     }
 
@@ -964,30 +1005,27 @@ export const sendOrderStatusUpdateEmail = async (order) => {
     });
 
     const statusHeaderColors = {
-      'received': '#1d3557',
-      'preparing': '#7c3aed',
-      'ready': '#0891b2',
+      'received':         '#1d3557',
+      'preparing':        '#7c3aed',
       'out for delivery': '#ea580c',
-      'completed': '#2563eb',
-      'cancelled': '#ef4444'
+      'completed':        '#2563eb',
+      'cancelled':        '#ef4444',
     };
 
     const statusIcon = {
-      'received': '🍕',
-      'preparing': '🔥',
-      'ready': '📦',
+      'received':         '🍕',
+      'preparing':        '🔥',
       'out for delivery': '🛵',
-      'completed': '🎉',
-      'cancelled': '🧹'
+      'completed':        '🎉',
+      'cancelled':        '🧹',
     }[order.status] || '🍔';
 
     const statusColors = {
-      'received': '#1d3557',
-      'preparing': '#7c3aed',
-      'ready': '#0891b2',
+      'received':         '#1d3557',
+      'preparing':        '#7c3aed',
       'out for delivery': '#ea580c',
-      'completed': '#10b981',
-      'cancelled': '#ef4444'
+      'completed':        '#10b981',
+      'cancelled':        '#ef4444',
     };
 
     const htmlContent = `

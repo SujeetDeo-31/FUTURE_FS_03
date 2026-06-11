@@ -10,10 +10,27 @@ import * as emailService from '../services/emailService.js';
  */
 export const createOrder = async (req, res, next) => {
   try {
-    const { sessionId, items, subtotal, customerName, customerEmail, notes } = req.body;
+    const {
+      sessionId, items, subtotal,
+      customerName, customerEmail, deliveryAddress,
+      notes, tableNumber, orderType,
+      isGuest,   // flag sent by frontend when user is not logged in
+    } = req.body;
 
     if (!items || items.length === 0) {
       return res.status(400).json({ success: false, message: 'Your cart is empty.' });
+    }
+
+    // ── Guest delivery validation ─────────────────────────────
+    // Dine-in guests provide their name via the table welcome modal — no extra validation needed here.
+    // Delivery guests must supply name + address; email is optional.
+    if (isGuest && orderType !== 'dine-in') {
+      if (!customerName || !customerName.trim()) {
+        return res.status(400).json({ success: false, message: 'Please enter your name to continue.' });
+      }
+      if (!deliveryAddress || !deliveryAddress.trim()) {
+        return res.status(400).json({ success: false, message: 'Please enter your delivery address.' });
+      }
     }
 
     // Server-side subtotal recalculation to prevent client tampering
@@ -25,15 +42,18 @@ export const createOrder = async (req, res, next) => {
     const order = await Order.create({
       sessionId,
       items,
-      subtotal: roundedSubtotal,
-      customerName:  customerName  || '',
-      customerEmail: customerEmail || '',
-      notes:         notes         || '',
+      subtotal:        roundedSubtotal,
+      customerName:    customerName    || '',
+      customerEmail:   customerEmail   || '',
+      deliveryAddress: deliveryAddress || '',
+      notes:           notes           || '',
+      orderType:       orderType       || 'delivery',
+      tableNumber:     tableNumber     || '',
     });
 
-    console.log(`[OrderController] [CREATE SUCCESS] New order created. ID: ${order._id}, Session: ${order.sessionId}, Items: ${order.items.length}, Subtotal: ₹${order.subtotal}, Status: received`);
+    console.log(`[OrderController] [CREATE SUCCESS] Order ID: ${order._id}, Type: ${order.orderType}, Guest: ${!!isGuest}, Email: ${order.customerEmail || '—'}`);
 
-    // Trigger emails in the background
+    // Trigger emails in the background (confirmation only sent if email available)
     emailService.sendOrderConfirmationEmail(order).catch(err => {
       console.error('[OrderController] Customer order email failed:', err.message);
     });
@@ -43,7 +63,9 @@ export const createOrder = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: "Order received! We'll have it ready soon.",
+      message: orderType === 'dine-in'
+        ? "Order sent to the kitchen! Sit back and enjoy."
+        : "Order received! We'll start preparing it right away.",
       data: {
         orderId:   order._id,
         subtotal:  order.subtotal,

@@ -16,7 +16,9 @@ const itemSchema = [
   body('items.*.quantity').isInt({ min: 1, max: 20 }).withMessage('Quantity must be between 1 and 20'),
   body('sessionId').trim().notEmpty().withMessage('Session ID is required'),
   body('subtotal').isFloat({ min: 0 }).withMessage('Subtotal must be a positive number'),
-  body('customerEmail').optional().isEmail().normalizeEmail(),
+  // optional({ values: 'falsy' }) skips validation when the value is '', null, or undefined.
+  // This is the correct way to make email truly optional — .optional() alone only skips undefined.
+  body('customerEmail').optional({ values: 'falsy' }).isEmail().normalizeEmail(),
 ];
 
 router.post('/',          itemSchema, validate, ctrl.createOrder);
@@ -24,7 +26,7 @@ router.get('/admin/list', auth, ctrl.listAllOrders);
 router.patch('/:id/status', auth, [
   body('status')
     .notEmpty().withMessage('Status is required')
-    .isIn(['received', 'preparing', 'ready', 'out for delivery', 'completed', 'cancelled']).withMessage('Invalid status value')
+    .isIn(['received', 'preparing', 'out for delivery', 'completed', 'cancelled']).withMessage('Invalid status value')
 ], validate, ctrl.updateOrderStatus);
 router.get('/:id',        ctrl.getOrder);
 router.get('/',           ctrl.listOrdersBySession);

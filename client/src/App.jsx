@@ -19,6 +19,7 @@ import CartDrawer from './components/CartDrawer';
 import UserDrawer from './components/UserDrawer';
 import Lightbox from './components/Lightbox';
 import AdminPanel from './components/AdminDashboard/AdminPanel';
+import TableWelcomeModal from './components/TableWelcomeModal';
 
 function AppContent() {
   const [adminOpen, setAdminOpen] = useState(false);
@@ -64,6 +65,9 @@ function AppContent() {
         isOpen={adminOpen}
         onClose={() => setAdminOpen(false)}
       />
+
+      {/* QR Table Welcome Modal */}
+      <TableWelcomeModal />
     </>
   );
 }
